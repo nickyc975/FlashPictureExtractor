@@ -3,15 +3,12 @@ package com.nickyc975.fpextrcator;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Toast;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -19,36 +16,52 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        String OUTPUT_DIR = "FlashPictures/";
+
         setContentView(R.layout.activity_main);
 
-        copyFiles(loadImages(), OUTPUT_DIR);
+        loadImages();
     }
 
 
-    private List<File> loadImages() {
+    private void loadImages() {
+        String OUTPUT_DIR = "FlashPictures/.cache/";
+        String QQ_FP_DIR_1 = "tencent/MobileQQ/diskcache/";
+        String QQ_FP_DIR_2 = "Tencent/MobileQQ/diskcache/";
+
         File QQFPDir;
-        List<File> FlashPictures = new ArrayList<>();
-        File QQFPDir_1 = Environment.getExternalStoragePublicDirectory("tencent/MobileQQ/diskcache/");
-        File QQFPDir_2 = Environment.getExternalStoragePublicDirectory("Tencent/MobileQQ/diskcache/");
+        File outputDir = Environment.getExternalStoragePublicDirectory(OUTPUT_DIR);
+        File QQFPDir_1 = Environment.getExternalStoragePublicDirectory(QQ_FP_DIR_1);
+        File QQFPDir_2 = Environment.getExternalStoragePublicDirectory(QQ_FP_DIR_2);
 
         if (QQFPDir_1.exists()) {
             QQFPDir = QQFPDir_1;
         } else if (QQFPDir_2.exists()) {
             QQFPDir = QQFPDir_2;
         } else {
-            Toast.makeText(this, "文件夹不存在！", Toast.LENGTH_LONG).show();
-            return FlashPictures;
+            Log.e("fpextrcator", "QQ cache dir not found!");
+            return;
         }
 
-        File[] cacheFiles = QQFPDir.listFiles();
-        for (File file : cacheFiles) {
-            if (file.canRead() && isImage(file)) {
-                FlashPictures.add(file);
+        if (!outputDir.exists()) {
+            if (!outputDir.mkdirs()) {
+                Log.e("fpextrcator", "Unable to create dir " + outputDir.getPath() + " !");
+                return;
             }
         }
 
-        return FlashPictures;
+        File target;
+        String target_path;
+        File[] cacheFiles = QQFPDir.listFiles();
+        for (File file : cacheFiles) {
+            if (file.canRead() && isImage(file)) {
+                target_path = OUTPUT_DIR + file.lastModified() + ".jpg";
+                target = Environment.getExternalStoragePublicDirectory(target_path);
+                copyFile(file, target);
+                if (!target.setLastModified(file.lastModified())) {
+                    Log.w("fpextrcator", "Unable to change last modified time of " + target.getPath() + " .");
+                }
+            }
+        }
     }
 
 
@@ -67,26 +80,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void copyFiles(List<File> files, String dir) {
-        File target;
-        String target_path;
-        File outputDir = Environment.getExternalStoragePublicDirectory(dir);
-        if (!outputDir.exists()) {
-            if (!outputDir.mkdirs()) {
-                Toast.makeText(this, "创建文件夹失败！", Toast.LENGTH_LONG).show();
-                return;
-            }
-        }
-
-        for (File source : files) {
-            target_path = dir + source.lastModified() + ".jpg";
-            target = Environment.getExternalStoragePublicDirectory(target_path);
-            copyFile(source, target);
-            target.setLastModified(source.lastModified());
-        }
-    }
-
-
     private void copyFile(File source, File target) {
         try {
             byte[] buffer = new byte[1024];
@@ -100,8 +93,8 @@ public class MainActivity extends AppCompatActivity {
 
             reader.close();
             writer.close();
-        } catch (IOException ignored) {
-//            Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            Log.e("fpextrcator", e.getMessage());
         }
     }
 }
