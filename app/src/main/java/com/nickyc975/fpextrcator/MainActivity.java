@@ -4,32 +4,55 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.GridView;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
+    private String OUTPUT_DIR = "FlashPictures/";
+    private String CACHE_DIR = OUTPUT_DIR + ".cache/";
+
+    private GridView gallery = null;
+    private GridViewAdapter adapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+        gallery = findViewById(R.id.gallery);
 
-        loadImages();
+        findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                exportSelectedImages();
+            }
+        });
+
+        findViewById(R.id.refresh).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadImages();
+            }
+        });
+    }
+
+    private void exportSelectedImages() {
+
     }
 
 
     private void loadImages() {
-        String OUTPUT_DIR = "FlashPictures/.cache/";
         String QQ_FP_DIR_1 = "tencent/MobileQQ/diskcache/";
         String QQ_FP_DIR_2 = "Tencent/MobileQQ/diskcache/";
 
         File QQFPDir;
-        File outputDir = Environment.getExternalStoragePublicDirectory(OUTPUT_DIR);
+        File outputDir = Environment.getExternalStoragePublicDirectory(CACHE_DIR);
         File QQFPDir_1 = Environment.getExternalStoragePublicDirectory(QQ_FP_DIR_1);
         File QQFPDir_2 = Environment.getExternalStoragePublicDirectory(QQ_FP_DIR_2);
 
@@ -51,16 +74,24 @@ public class MainActivity extends AppCompatActivity {
 
         File target;
         String target_path;
-        File[] cacheFiles = QQFPDir.listFiles();
-        for (File file : cacheFiles) {
+        ArrayList<GridItem> gridItems = new ArrayList<>();
+        for (File file : QQFPDir.listFiles()) {
             if (file.canRead() && isImage(file)) {
-                target_path = OUTPUT_DIR + file.lastModified() + ".jpg";
+                target_path = CACHE_DIR + file.lastModified() + ".jpg";
                 target = Environment.getExternalStoragePublicDirectory(target_path);
                 copyFile(file, target);
                 if (!target.setLastModified(file.lastModified())) {
                     Log.w("fpextrcator", "Unable to change last modified time of " + target.getPath() + " .");
                 }
+                gridItems.add(new GridItem(file, file.lastModified()));
             }
+        }
+
+        if (adapter == null) {
+            adapter = new GridViewAdapter(this, gridItems);
+            gallery.setAdapter(adapter);
+        } else {
+            adapter.setData(gridItems);
         }
     }
 
