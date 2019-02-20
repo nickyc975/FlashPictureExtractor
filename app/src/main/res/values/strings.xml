@@ -1,4 +1,7 @@
 <resources>
-    <string name="app_name">Flash Picture Extrcator</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">闪照提取器</string>
+    <string name="export">导出图片</string>
+    <string name="refresh">刷新缓存</string>
+    <string name="picture">图片</string>
+    <string name="timestamp">时间戳</string>
 </resources>
