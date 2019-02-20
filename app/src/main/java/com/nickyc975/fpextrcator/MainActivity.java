@@ -5,45 +5,90 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.GridView;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
 
 
 public class MainActivity extends AppCompatActivity {
+    private int EXPORT_NUM = 10;
     private String OUTPUT_DIR = "FlashPictures/";
     private String CACHE_DIR = OUTPUT_DIR + ".cache/";
-
-    private GridView gallery = null;
-    private GridViewAdapter adapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        gallery = findViewById(R.id.gallery);
 
         findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                exportSelectedImages();
+                Toast.makeText(v.getContext(), "正在导出...", Toast.LENGTH_SHORT).show();
+                exportImages();
+                Toast.makeText(v.getContext(), "导出完成！", Toast.LENGTH_SHORT).show();
             }
         });
 
         findViewById(R.id.refresh).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Toast.makeText(v.getContext(), "正在刷新...", Toast.LENGTH_SHORT).show();
                 loadImages();
+                Toast.makeText(v.getContext(), "刷新完成！", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void exportSelectedImages() {
+    private void exportImages() {
+        int exportNum;
+        EditText item = findViewById(R.id.export_num);
 
+        try {
+            exportNum = Integer.parseInt(item.getText().toString());
+        } catch (Exception e) {
+            exportNum = EXPORT_NUM;
+        }
+
+        File cacheDir = Environment.getExternalStoragePublicDirectory(CACHE_DIR);
+        if (!cacheDir.exists()) {
+            Toast.makeText(this, "请先点击右上角的刷新按钮！", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        LinkedList<File> images = new LinkedList<>(Arrays.asList(cacheDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isFile();
+            }
+        })));
+        if (images.size() <= 0) {
+            Toast.makeText(this, "请先点击右上角的刷新按钮！", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Collections.sort(images, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                return (int) ((o2.lastModified() - o1.lastModified()) / 1000);
+            }
+        });
+
+        File target;
+        String target_path;
+        for (int i = 0; i < Math.min(exportNum, images.size()); i++) {
+            target_path = OUTPUT_DIR + images.get(i).getName();
+            target = Environment.getExternalStoragePublicDirectory(target_path);
+            copyFile(images.get(i), target);
+        }
     }
 
 
@@ -74,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
 
         File target;
         String target_path;
-        ArrayList<GridItem> gridItems = new ArrayList<>();
         for (File file : QQFPDir.listFiles()) {
             if (file.canRead() && isImage(file)) {
                 target_path = CACHE_DIR + file.lastModified() + ".jpg";
@@ -83,15 +127,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!target.setLastModified(file.lastModified())) {
                     Log.w("fpextrcator", "Unable to change last modified time of " + target.getPath() + " .");
                 }
-                gridItems.add(new GridItem(file, file.lastModified()));
             }
-        }
-
-        if (adapter == null) {
-            adapter = new GridViewAdapter(this, gridItems);
-            gallery.setAdapter(adapter);
-        } else {
-            adapter.setData(gridItems);
         }
     }
 

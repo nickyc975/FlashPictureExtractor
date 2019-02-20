@@ -4,4 +4,5 @@
     <string name="refresh">刷新缓存</string>
     <string name="picture">图片</string>
     <string name="timestamp">时间戳</string>
+    <string name="hint">导出最近的多少张图片？</string>
 </resources>

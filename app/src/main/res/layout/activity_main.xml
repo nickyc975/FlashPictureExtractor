@@ -44,15 +44,13 @@
 
     </android.support.v7.widget.Toolbar>
 
-    <GridView
-        android:id="@+id/gallery"
+    <EditText
+        android:id="@+id/export_num"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:columnWidth="@dimen/grid_column_width"
-        android:numColumns="auto_fit"
-        android:stretchMode="columnWidth"
-        android:verticalSpacing="@dimen/grid_spacing"
-        android:horizontalSpacing="@dimen/grid_spacing"/>
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/button_margin"
+        android:inputType="number"
+        android:hint="@string/hint"
+        tools:ignore="Autofill" />
 
 </LinearLayout>
